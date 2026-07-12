@@ -1,0 +1,34 @@
+# ---------------------------------------------------------------------------
+# NEVER commit virtual machine images or appliances — they are multiple GB
+# and do not belong in git. The repo tracks documentation and evidence only.
+# ---------------------------------------------------------------------------
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+*.ova
+*.ovf
+*.vbox
+*.vbox-prev
+*.iso
+*.img
+*.img.gz
+
+# VirtualBox default VM directory, if it ever lands inside the repo
+VirtualBox VMs/
+
+# Large or raw capture files — keep sanitized excerpts as text/PNG instead
+*.pcap
+*.pcapng
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# NOTE: evidence/*.png screenshots ARE tracked on purpose — they are small
+# and are the proof the design works. Do not ignore them.
