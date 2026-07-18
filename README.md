@@ -1,4 +1,4 @@
-# Secure Network Architecture Lab
+# Secure Network Architecture Lab (in-progress)
 
 A segmented, defense-in-depth network built and validated in a virtual lab. This
 project demonstrates network zoning, least-privilege firewall policy, and
