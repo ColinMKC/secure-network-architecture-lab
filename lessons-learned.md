@@ -9,6 +9,8 @@ because it shows reflection rather than rote execution.
 - Unchecked "Block RFC1918" on WAN because the lab's WAN is a private NAT range
 - webConfigurator defaulted to HTTP after console setup; switched to HTTPS so admin credentials aren't sent in plaintext.
 - "OPT interfaces (CORP/DMZ) start with no rules = implicit default-deny; all traffic blocked including outbound, unlike LAN's default allow-all."
+- Source must be "CORP net" (whole subnet 10.10.20.0/24), not "CORP address" (just the firewall's interface IP) — otherwise workstation traffic isn't matched by the rule.
+- Verified least-privilege on CORP: two deny rules (→DMZ, →mgmt) placed above one allow (→internet) produce exactly the intended result. Rule order confirmed correct because the denies take precedence over the broad allow.
 
 ## What surprised me
 <!-- e.g. the default rules were more permissive than expected on new interfaces -->

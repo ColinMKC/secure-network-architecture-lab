@@ -87,6 +87,22 @@ Per-interface rule details and screenshots live in [`firewall-rules/`](firewall-
 ## 5. Validation
 
 The design is not "secure because I said so" — each boundary is tested.
+### CORP zone — least-privilege enforcement (verified)
+The CORP zone permits outbound internet access but denies all access to the
+DMZ and management zones. Rule order matters: the two block rules sit above
+the allow rule, so segmentation traffic is caught before the broad
+internet-allow can match it.
+
+Verified from a CORP workstation (Kali, 10.10.20.100):
+
+| Test | Destination | Result | Meaning |
+|------|-------------|--------|---------|
+| CORP → DMZ | 10.10.30.100 | 100% loss | Lateral movement to the exposed server is blocked |
+| CORP → Management | 10.10.10.1 | 100% loss | Admin plane is shielded from users |
+| CORP → Internet | 8.8.8.8 | replies | Legitimate business traffic flows |
+
+![CORP rules](evidence/corp-firewall-rules.png)
+![Least-privilege proof](evidence/corp-least-privilege-proof.png)
 
 ### Before hardening (baseline)
 <!-- TODO: screenshot a successful ping from Corporate to DMZ -->
