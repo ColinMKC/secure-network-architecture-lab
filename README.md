@@ -85,24 +85,7 @@ Per-interface rule details and screenshots live in [`firewall-rules/`](firewall-
 ---
 
 ## 5. Validation
-
 The design is not "secure because I said so" — each boundary is tested.
-### CORP zone — least-privilege enforcement (verified)
-The CORP zone permits outbound internet access but denies all access to the
-DMZ and management zones. Rule order matters: the two block rules sit above
-the allow rule, so segmentation traffic is caught before the broad
-internet-allow can match it.
-
-Verified from a CORP workstation (Kali, 10.10.20.100):
-
-| Test | Destination | Result | Meaning |
-|------|-------------|--------|---------|
-| CORP → DMZ | 10.10.30.100 | 100% loss | Lateral movement to the exposed server is blocked |
-| CORP → Management | 10.10.10.1 | 100% loss | Admin plane is shielded from users |
-| CORP → Internet | 8.8.8.8 | replies | Legitimate business traffic flows |
-
-![CORP rules](evidence/corp-firewall-rules.png)
-![Least-privilege proof](evidence/corp-least-privilege-proof.png)
 
 ### Before hardening (baseline)
 <!-- TODO: screenshot a successful ping from Corporate to DMZ -->
@@ -121,6 +104,52 @@ An attacker (Kali) scanning the DMZ is detected by the IDS, and attempts to
 pivot from a compromised DMZ host to the corporate zone are blocked at the
 firewall. See `evidence/suricata-alert.png`.
 
+### CORP zone — least-privilege enforcement (verified)
+The CORP zone permits outbound internet access but denies all access to the
+DMZ and management zones. Rule order matters: the two block rules sit above
+the allow rule, so segmentation traffic is caught before the broad
+internet-allow can match it.
+
+Verified from a CORP workstation (Kali, 10.10.20.100):
+
+| Test | Destination | Result | Meaning |
+|------|-------------|--------|---------|
+| CORP → DMZ | 10.10.30.100 | 100% loss | Lateral movement to the exposed server is blocked |
+| CORP → Management | 10.10.10.1 | 100% loss | Admin plane is shielded from users |
+| CORP → Internet | 8.8.8.8 | replies | Legitimate business traffic flows |
+
+![CORP rules](evidence/corp-firewall-rules.png)
+![Least-privilege proof](evidence/corp-least-privilege-proof.png)
+
+### DMZ zone — containment of a compromised host (verified)
+
+Threat scenario: assume an attacker has compromised the DMZ web server.
+Can they reach anything internal? The DMZ is treated as hostile and given
+the minimum egress it needs.
+
+Policy: block DMZ → management and DMZ → CORP; allow only TCP 80/443 outbound;
+allow DNS (UDP 53) only to the firewall's own resolver (10.10.30.1), never to
+the open internet.
+
+Verified from a host inside the DMZ (Kali, 10.10.30.101):
+
+| Test | Path | Result | Meaning |
+|------|------|--------|---------|
+| ping 10.10.10.1 | DMZ → management | 100% loss | Attacker cannot reach the admin plane |
+| ping 10.10.20.1 | DMZ → CORP | 100% loss | Attacker cannot pivot to workstations |
+| curl -4 http://neverssl.com | DMZ → web | 200 OK | Only permitted egress (web) succeeds |
+
+Notable findings during validation:
+- Strict TCP 80/443-only rules also blocked DNS, so the DMZ could not resolve
+  names. Resolved by allowing UDP 53 to the firewall's resolver only — not open
+  DNS — which prevents DNS-tunneling data exfiltration.
+- With DNS working, connections still failed until forced to IPv4 (curl -4).
+  The resolver returned an IPv6 address, but the ruleset is IPv4-only, so IPv6
+  had no matching rule. Takeaway: IPv4-only policy must explicitly deny IPv6, or
+  IPv6 traffic can bypass controls entirely.
+
+![DMZ rules](evidence/dmz-firewall-rules.png)
+![DMZ containment and egress](evidence/dmz-containment-and-egress.png)
 ---
 
 ## 6. Detection layer
